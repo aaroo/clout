@@ -63,13 +63,13 @@ public class CloutCommandParser {
         } else if(fields.size() == 1) {
             getSubjectClout(fields);
         } else {
-            System.err.println("Sory looks like your command was not quite correct, please try again");
+            System.err.println("Sorry looks like your command was not quite correct, please try again");
         }
 
     }
 
     /**
-     * Gets the entire clout for all subjects in the satabase
+     * Gets the entire clout for all subjects in the database
      */
     private void getEntireClout() {
         List<String> subjectList = new ArrayList<String>();
@@ -79,7 +79,7 @@ public class CloutCommandParser {
             for(String follower : subjectList) {
                 int count = 0;
                 count = DBUtils.queryFollowersForSubjectRecursive(follower, follower, count);
-                System.out.println(follower + " has " + ((count > 0) ? count : "no") + " followers " );
+                System.out.println(follower + " has " + ((count > 0) ? count : "no") + (count ==1 ? " follower " : " followers " ));
             }
         }
     }
