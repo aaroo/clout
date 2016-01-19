@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Created by avenkat
  */
-public class CloutParser {
+public class CloutCommandParser {
 
     public void parseInput(String input) {
         if(StringUtils.isEmpty(input)) {

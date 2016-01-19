@@ -12,7 +12,7 @@ public class Clout {
     public static final String EXIT = "exit";
 
     public static void main(String[] args) {
-        CloutParser cloutParser = new CloutParser();
+        CloutCommandParser cloutCommandParser = new CloutCommandParser();
         boolean running = true;
         Scanner sc = new Scanner(System.in);
         System.out.println("> clout\n");
@@ -22,7 +22,7 @@ public class Clout {
             if(StringUtils.equalsIgnoreCase(EXIT, input)) {
                 running = false;
             }
-            cloutParser.parseInput(input);
+            cloutCommandParser.parseInput(input);
         }
 
     }
