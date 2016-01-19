@@ -26,9 +26,8 @@ public class CloutParser {
             handleExit();
         } else {
             Connection connection = DBConnection.getInstance().getConnection();
-
             if(connection != null) {
-                handleCommand(input, connection);
+                handleCommand(input);
 
             } else {
                 System.err.println("Sorry, trouble getting a DB Connection");
@@ -38,11 +37,11 @@ public class CloutParser {
 
     }
 
-    private void handleCommand(String input, Connection connection) {
+    private void handleCommand(String input) {
         if(Commands.CLOUT.equalsInput(input)) {
-            performCloutCommand(input, connection);
+            performCloutCommand(input);
         } else if(Commands.FOLLOWS.equalsInput(input)) {
-            performFollowsCommand(input, connection);
+            performFollowsCommand(input);
         } else {
             handleDefault();
         }
@@ -56,15 +55,16 @@ public class CloutParser {
         System.exit(0);
     }
 
-    private void performCloutCommand(String input, Connection connection) {
+    private void performCloutCommand(String input) {
 
         List<String> fields = getFields(input, Commands.CLOUT);
         if(fields.size() == 0) {
             List<String> subjectList = new ArrayList<String>();
             String selectStatement = "SELECT name, subject from FOLLOWS";
             PreparedStatement statement = null;
-            ResultSet resultSet = null;
+            ResultSet resultSet;
             try {
+                Connection connection = DBConnection.getInstance().getConnection();
                 statement = connection.prepareStatement(selectStatement);
                 resultSet = statement.executeQuery();
                 while(resultSet.next()) {
@@ -86,7 +86,7 @@ public class CloutParser {
             if(!subjectList.isEmpty()) {
                 for(String follower : subjectList) {
                     int count = 0;
-                    count = queryFollowersForSubjectRecursive(follower, follower, count, connection);
+                    count = queryFollowersForSubjectRecursive(follower, follower, count);
                     System.out.println(follower + " has " + ((count > 0) ? count : "no") + " followers " );
                 }
             }
@@ -94,7 +94,7 @@ public class CloutParser {
             String subject = fields.get(0);
             subject = StringUtils.strip(subject);
             int count = 0;
-            count = queryFollowersForSubjectRecursive(subject, subject, count, connection);
+            count = queryFollowersForSubjectRecursive(subject, subject, count);
             System.out.println(subject + " has " + ((count > 0) ? count : "no") + " followers " );
         } else {
             System.err.println("Sory looks like your command was not quite correct, please try again");
@@ -102,23 +102,24 @@ public class CloutParser {
 
     }
 
-    private void performFollowsCommand(String input, Connection connection) {
+    private void performFollowsCommand(String input) {
 
         List<String> fields = getFields(input, Commands.FOLLOWS);
         if(fields.size() == 2) {
             String follower = fields.get(0);
             String subject = fields.get(1);
-            mergeIntoDB(connection, follower, subject);
-            insertIntoDB(connection, subject, "");
+            mergeIntoDB(follower, subject);
+            insertIntoDB(subject, "");
         } else {
             System.err.println("Sorry incorrect syntax");
         }
     }
 
-    private void insertIntoDB(Connection connection, String follower, String subject) {
+    private void insertIntoDB(String follower, String subject) {
         PreparedStatement statement = null;
         try {
             String insertQuery = "INSERT INTO FOLLOWS(name, subject) VALUES (?, ?)";
+            Connection connection = DBConnection.getInstance().getConnection();
             statement = connection.prepareStatement(insertQuery);
             statement.setString(1, follower);
             statement.setString(2, subject);
@@ -137,10 +138,11 @@ public class CloutParser {
         }
     }
 
-    private void mergeIntoDB(Connection connection, String follower, String subject) {
+    private void mergeIntoDB(String follower, String subject) {
         PreparedStatement statement = null;
         try {
             String insertQuery = "MERGE INTO FOLLOWS(name, subject) KEY(name) VALUES (?, ?)";
+            Connection connection = DBConnection.getInstance().getConnection();
             statement = connection.prepareStatement(insertQuery);
             statement.setString(1, follower);
             statement.setString(2, subject);
@@ -156,13 +158,14 @@ public class CloutParser {
         }
     }
 
-    private int queryFollowersForSubjectRecursive(String rootSubject, String subject, int startCount, Connection connection) {
+    private int queryFollowersForSubjectRecursive(String rootSubject, String subject, int startCount) {
         int count = startCount;
         String selectStatement = "SELECT name, subject from FOLLOWS where subject=?";
         PreparedStatement statement = null;
-        ResultSet resultSet = null;
+        ResultSet resultSet;
         try {
             List<String> subjectList = new ArrayList<String>();
+            Connection connection = DBConnection.getInstance().getConnection();
             statement = connection.prepareStatement(selectStatement);
             statement.setString(1, subject);
             resultSet = statement.executeQuery();
@@ -173,7 +176,7 @@ public class CloutParser {
 
             for(String follower : subjectList) {
                 if(!StringUtils.equalsIgnoreCase(subject, follower) && !StringUtils.equalsIgnoreCase(rootSubject, follower)) {
-                    count += queryFollowersForSubjectRecursive(rootSubject, follower, startCount, connection);
+                    count += queryFollowersForSubjectRecursive(rootSubject, follower, startCount);
                 }
             }
 
@@ -196,6 +199,7 @@ public class CloutParser {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private ArrayList<String> getFields(String input, Commands command) {
         ArrayList fields =  new ArrayList<String>(Arrays.asList(input.split(command.toString())));
         if(fields.contains("")) {
