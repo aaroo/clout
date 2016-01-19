@@ -6,6 +6,8 @@ import java.util.Scanner;
 
 /**
  * Created by avenkat
+ * Main() class for the Clout application.
+ * Takes user input line and passes it on to the CloutCommandParser
  */
 public class Clout {
 

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by avenkat
+ * Enumeration of supported commands.
  */
 public enum Commands {
     CLOUT("clout"),

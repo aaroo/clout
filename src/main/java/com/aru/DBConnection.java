@@ -8,6 +8,8 @@ import java.sql.Statement;
 
 /**
  * Created by avenkat
+ * Connection class holds the singleton instance of the connection pool to be shared by application.
+ * Other classes may request a connection to the database form the shared pool.
  */
 public class DBConnection {
 
@@ -25,9 +27,11 @@ public class DBConnection {
         jdbcConnectionPool = JdbcConnectionPool.create("jdbc:h2:mem:db1:mode=MySQL", "aru", "aru");
         jdbcConnectionPool.setMaxConnections(100);
         createTables();
-
     }
 
+    /**
+     * Create initial empty table
+     */
     private void createTables() {
         Connection connection = getConnection();
         if (connection != null) {
@@ -44,6 +48,10 @@ public class DBConnection {
         }
     }
 
+    /**
+     * Creates the initial "FOLLOWS" table
+     * @param statement Statement used to create the table
+     */
     private void createFollowsTable(Statement statement) {
         try {
             String sql = "CREATE TABLE FOLLOWS " +
@@ -57,6 +65,10 @@ public class DBConnection {
         }
     }
 
+    /**
+     * Gets a database connection from the shared connection pool
+     * @return Connection to database
+     */
     public Connection getConnection() {
         try {
             return jdbcConnectionPool.getConnection();
