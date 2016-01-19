@@ -45,59 +45,67 @@ public class CloutParser {
         }
     }
 
-    private void handleEmptyInput() {
-        System.out.println("We're working on a release that reads your mind, but until then, please enter a command");
-    }
-
-    private void handleExit() {
-        System.exit(0);
-    }
-
     private void performCloutCommand(String input) {
 
         List<String> fields = getFields(input, Commands.CLOUT);
         if(fields.size() == 0) {
-            List<String> subjectList = new ArrayList<String>();
-            String selectStatement = "SELECT name, subject from FOLLOWS";
-            PreparedStatement statement = null;
-            ResultSet resultSet;
-            try {
-                Connection connection = DBConnection.getInstance().getConnection();
-                statement = connection.prepareStatement(selectStatement);
-                resultSet = statement.executeQuery();
-                while(resultSet.next()) {
-                    String newSubject = resultSet.getString(NAME);
-                    addTOSubjectList(subjectList, newSubject);
-                    newSubject = resultSet.getString(SUBJECT);
-                    addTOSubjectList(subjectList, newSubject);
-                }
-            } catch (SQLException e) {
-                System.err.println("Could not query database");
-            } catch (Exception e) {
-                System.err.println("Could not query database");
-            } finally {
-                if(statement != null) {
-                    closeConnection(statement);
-                }
-            }
-
-            if(!subjectList.isEmpty()) {
-                for(String follower : subjectList) {
-                    int count = 0;
-                    count = queryFollowersForSubjectRecursive(follower, follower, count);
-                    System.out.println(follower + " has " + ((count > 0) ? count : "no") + " followers " );
-                }
-            }
+            getEntireClout();
         } else if(fields.size() == 1) {
-            String subject = fields.get(0);
-            subject = StringUtils.strip(subject);
-            int count = 0;
-            count = queryFollowersForSubjectRecursive(subject, subject, count);
-            System.out.println(subject + " has " + ((count > 0) ? count : "no") + " followers " );
+            getSubjectClout(fields);
         } else {
             System.err.println("Sory looks like your command was not quite correct, please try again");
         }
 
+    }
+
+    private void getEntireClout() {
+        List<String> subjectList = new ArrayList<String>();
+        getSubjectList(subjectList);
+
+        if(!subjectList.isEmpty()) {
+            for(String follower : subjectList) {
+                int count = 0;
+                count = queryFollowersForSubjectRecursive(follower, follower, count);
+                System.out.println(follower + " has " + ((count > 0) ? count : "no") + " followers " );
+            }
+        }
+    }
+
+    private void getSubjectClout(List<String> fields) {
+        String subject = fields.get(0);
+        subject = StringUtils.strip(subject);
+        getClout(subject);
+    }
+
+    private void getClout(String subject) {
+        int count = 0;
+        count = queryFollowersForSubjectRecursive(subject, subject, count);
+        System.out.println(subject + " has " + ((count > 0) ? count : "no") + " followers " );
+    }
+
+    private void getSubjectList(List<String> subjectList) {
+        String selectStatement = "SELECT name, subject from FOLLOWS";
+        PreparedStatement statement = null;
+        ResultSet resultSet;
+        try {
+            Connection connection = DBConnection.getInstance().getConnection();
+            statement = connection.prepareStatement(selectStatement);
+            resultSet = statement.executeQuery();
+            while(resultSet.next()) {
+                String newSubject = resultSet.getString(NAME);
+                addTOSubjectList(subjectList, newSubject);
+                newSubject = resultSet.getString(SUBJECT);
+                addTOSubjectList(subjectList, newSubject);
+            }
+        } catch (SQLException e) {
+            System.err.println("Could not query database");
+        } catch (Exception e) {
+            System.err.println("Could not query database");
+        } finally {
+            if(statement != null) {
+                closeConnection(statement);
+            }
+        }
     }
 
     private void performFollowsCommand(String input) {
@@ -217,6 +225,15 @@ public class CloutParser {
         } catch (SQLException e) {
             System.err.println("Unable to close db connection");
         }
+    }
+
+
+    private void handleEmptyInput() {
+        System.out.println("We're working on a release that reads your mind, but until then, please enter a command");
+    }
+
+    private void handleExit() {
+        System.exit(0);
     }
 
     private void handleDefault() {
