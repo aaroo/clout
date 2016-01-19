@@ -30,10 +30,10 @@ $ ./clout
 Usage:
 
 1. Add a relationship:
-> <person_a> follows <person_b>
+> person_a follows person_b
 
 2. Determine extended influence of a person:
-> clout <person>
+> clout person
 
 3. Determine extended influence of all people in the graph:
 > clout
