@@ -17,7 +17,6 @@ public class Clout {
         Scanner sc = new Scanner(System.in);
         System.out.println("> clout\n");
         while(running) {
-
             System.out.print(">");
             String input = sc.nextLine();
             if(StringUtils.equalsIgnoreCase(EXIT, input)) {

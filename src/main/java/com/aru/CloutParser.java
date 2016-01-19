@@ -16,6 +16,9 @@ import java.util.List;
  */
 public class CloutParser {
 
+    public static final String SUBJECT = "subject";
+    public static final String NAME = "name";
+
     public void parseInput(String input) {
         if(StringUtils.isEmpty(input)) {
             handleEmptyInput();
@@ -65,17 +68,11 @@ public class CloutParser {
                 statement = connection.prepareStatement(selectStatement);
                 resultSet = statement.executeQuery();
                 while(resultSet.next()) {
-                    String newSubject = resultSet.getString("name");
+                    String newSubject = resultSet.getString(NAME);
                     addTOSubjectList(subjectList, newSubject);
-                    newSubject = resultSet.getString("subject");
+                    newSubject = resultSet.getString(SUBJECT);
                     addTOSubjectList(subjectList, newSubject);
                 }
-                for(String follower : subjectList) {
-                    int count = 0;
-                    count = queryFollowersForSubjectRecursive(follower, follower, count, connection);
-                    System.out.println(follower + " has " + ((count > 0) ? count : "no") + " followers " );
-                }
-
             } catch (SQLException e) {
                 System.err.println("Could not query database");
             } catch (Exception e) {
@@ -83,6 +80,14 @@ public class CloutParser {
             } finally {
                 if(statement != null) {
                     closeConnection(statement);
+                }
+            }
+
+            if(!subjectList.isEmpty()) {
+                for(String follower : subjectList) {
+                    int count = 0;
+                    count = queryFollowersForSubjectRecursive(follower, follower, count, connection);
+                    System.out.println(follower + " has " + ((count > 0) ? count : "no") + " followers " );
                 }
             }
         } else if(fields.size() == 1) {
@@ -92,50 +97,63 @@ public class CloutParser {
             count = queryFollowersForSubjectRecursive(subject, subject, count, connection);
             System.out.println(subject + " has " + ((count > 0) ? count : "no") + " followers " );
         } else {
-            //TODO: Handle
+            System.err.println("Sory looks like your command was not quite correct, please try again");
         }
 
-    }
-
-    private void addTOSubjectList(List<String> subjectList, String newSubject) {
-        if(!subjectList.contains(newSubject)) {
-            subjectList.add(newSubject);
-        }
-    }
-
-    private ArrayList<String> getFields(String input, Commands command) {
-        ArrayList fields =  new ArrayList<String>(Arrays.asList(input.split(command.toString())));
-        if(fields.contains("")) {
-            fields.remove("");
-        }
-        return fields;
     }
 
     private void performFollowsCommand(String input, Connection connection) {
 
         List<String> fields = getFields(input, Commands.FOLLOWS);
         if(fields.size() == 2) {
-            PreparedStatement statement = null;
-            try {
-                String insertQuery = "MERGE INTO FOLLOWS KEY(name) VALUES (?, ?)";
-                statement = connection.prepareStatement(insertQuery);
-                statement.setString(1, fields.get(0));
-                statement.setString(2, fields.get(1));
-                statement.executeUpdate();
-            } catch (SQLException e) {
-                System.err.println("Could not add follower: " + e);
-            } catch (Exception e) {
-                System.err.println("Could not query database");
-            } finally {
-                if(statement != null) {
-                    closeConnection(statement);
-                }
-            }
+            String follower = fields.get(0);
+            String subject = fields.get(1);
+            mergeIntoDB(connection, follower, subject);
+            insertIntoDB(connection, subject, "");
         } else {
             System.err.println("Sorry incorrect syntax");
         }
+    }
 
+    private void insertIntoDB(Connection connection, String follower, String subject) {
+        PreparedStatement statement = null;
+        try {
+            String insertQuery = "INSERT INTO FOLLOWS(name, subject) VALUES (?, ?)";
+            statement = connection.prepareStatement(insertQuery);
+            statement.setString(1, follower);
+            statement.setString(2, subject);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            String reason = e.getMessage();
+            if(!StringUtils.containsIgnoreCase(reason, "Unique index or primary key violation:")) {
+                System.err.println("Could not add follower: " + e);
+            }
+        } catch (Exception e) {
+            System.err.println("Could not query database");
+        } finally {
+            if(statement != null) {
+                closeConnection(statement);
+            }
+        }
+    }
 
+    private void mergeIntoDB(Connection connection, String follower, String subject) {
+        PreparedStatement statement = null;
+        try {
+            String insertQuery = "MERGE INTO FOLLOWS(name, subject) KEY(name) VALUES (?, ?)";
+            statement = connection.prepareStatement(insertQuery);
+            statement.setString(1, follower);
+            statement.setString(2, subject);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Could not add follower: " + e);
+        } catch (Exception e) {
+            System.err.println("Could not query database");
+        } finally {
+            if(statement != null) {
+                closeConnection(statement);
+            }
+        }
     }
 
     private int queryFollowersForSubjectRecursive(String rootSubject, String subject, int startCount, Connection connection) {
@@ -150,7 +168,7 @@ public class CloutParser {
             resultSet = statement.executeQuery();
             while(resultSet.next()) {
                 count++;
-                subjectList.add(resultSet.getString("name"));
+                subjectList.add(resultSet.getString(NAME));
             }
 
             for(String follower : subjectList) {
@@ -171,6 +189,21 @@ public class CloutParser {
         return count;
     }
 
+
+    private void addTOSubjectList(List<String> subjectList, String newSubject) {
+        if(!subjectList.contains(newSubject) &&!StringUtils.isEmpty(newSubject)) {
+            subjectList.add(newSubject);
+        }
+    }
+
+    private ArrayList<String> getFields(String input, Commands command) {
+        ArrayList fields =  new ArrayList<String>(Arrays.asList(input.split(command.toString())));
+        if(fields.contains("")) {
+            fields.remove("");
+        }
+        return fields;
+    }
+
     private void closeConnection(Statement statement) {
         try {
             statement.close();
@@ -178,7 +211,6 @@ public class CloutParser {
             System.err.println("Unable to close db connection");
         }
     }
-
 
     private void handleDefault() {
         System.out.println("Uh oh looks like we don't support that command, please enter something else or \"exit\" to exit");
