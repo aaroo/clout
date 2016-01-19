@@ -24,6 +24,9 @@ We define the follower/followee contract as follows:
 A person can be followed zero or more people.
 A person can follow zero or 1 person including themself.
 
+Assumption:
+If A follows B, B follows C and C follows A. Then A will have 3 followers, B, C and A since a person can follow themself.
+
 Example
 
 $ ./clout
