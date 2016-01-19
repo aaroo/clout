@@ -117,14 +117,13 @@ public class CloutParser {
     }
 
     private void performFollowsCommand(String input) {
-
         List<String> fields = getFields(input, Commands.FOLLOWS);
         if(fields.size() == 2) {
             String follower = fields.get(0);
             String subject = fields.get(1);
-            mergeIntoDB(follower, subject);
+            writeToDB(follower, subject);
             if(!StringUtils.equalsIgnoreCase(follower, subject)) {
-                insertIntoDB(subject, "");
+                writeToDB(subject, "");
                 System.out.println("OK!");
             } else {
                 System.out.println("Interesting, but that doesn't make sense.");
@@ -134,36 +133,19 @@ public class CloutParser {
         }
     }
 
-    private void insertIntoDB(String follower, String subject) {
+    private void writeToDB(String follower, String subject) {
         PreparedStatement statement = null;
+        String writeStatement = (StringUtils.isEmpty(subject)) ? INSERT_INTO_FOLLOWS : MERGE_INTO_FOLLOWS;
         try {
-            statement = getPreparedStatement(INSERT_INTO_FOLLOWS);
+            statement = getPreparedStatement(writeStatement);
             statement.setString(1, follower);
             statement.setString(2, subject);
             statement.executeUpdate();
         } catch (SQLException e) {
             String reason = e.getMessage();
-            if(!StringUtils.containsIgnoreCase(reason, "Unique index or primary key violation:")) {
+            if(StringUtils.isEmpty(subject) && !StringUtils.containsIgnoreCase(reason, "Unique index or primary key violation:")) {
                 System.err.println("Could not add follower: " + e);
             }
-        } catch (Exception e) {
-            System.err.println("Could not query database");
-        } finally {
-            if(statement != null) {
-                closeConnection(statement);
-            }
-        }
-    }
-
-    private void mergeIntoDB(String follower, String subject) {
-        PreparedStatement statement = null;
-        try {
-            statement = getPreparedStatement(MERGE_INTO_FOLLOWS);
-            statement.setString(1, follower);
-            statement.setString(2, subject);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Could not add follower: " + e);
         } catch (Exception e) {
             System.err.println("Could not query database");
         } finally {
