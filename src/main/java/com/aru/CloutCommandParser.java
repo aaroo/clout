@@ -112,7 +112,9 @@ public class CloutCommandParser {
         List<String> fields = getFields(input, Commands.FOLLOWS);
         if(fields.size() == 2) {
             String follower = fields.get(0);
+            follower = StringUtils.trim(follower);
             String subject = fields.get(1);
+            subject = StringUtils.trim(subject);
             DBUtils.writeToDB(follower, subject);
             if(!StringUtils.equalsIgnoreCase(follower, subject)) {
                 DBUtils.writeToDB(subject, "");
