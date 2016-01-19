@@ -3,10 +3,6 @@ package com.aru;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,13 +11,6 @@ import java.util.List;
  * Created by avenkat
  */
 public class CloutParser {
-
-    public static final String SUBJECT = "subject";
-    public static final String NAME = "name";
-    public static final String SELECT_ALL_FROM_FOLLOWS = "SELECT name, subject from FOLLOWS";
-    public static final String INSERT_INTO_FOLLOWS = "INSERT INTO FOLLOWS(name, subject) VALUES (?, ?)";
-    public static final String MERGE_INTO_FOLLOWS = "MERGE INTO FOLLOWS(name, subject) KEY(name) VALUES (?, ?)";
-    public static final String SELECT_SUBJECT_FROM_FOLLOWS = "SELECT name, subject from FOLLOWS where subject=?";
 
     public void parseInput(String input) {
         if(StringUtils.isEmpty(input)) {
@@ -64,12 +53,12 @@ public class CloutParser {
 
     private void getEntireClout() {
         List<String> subjectList = new ArrayList<String>();
-        getSubjectList(subjectList);
+        DBUtils.getSubjectList(subjectList);
 
         if(!subjectList.isEmpty()) {
             for(String follower : subjectList) {
                 int count = 0;
-                count = queryFollowersForSubjectRecursive(follower, follower, count);
+                count = DBUtils.queryFollowersForSubjectRecursive(follower, follower, count);
                 System.out.println(follower + " has " + ((count > 0) ? count : "no") + " followers " );
             }
         }
@@ -83,37 +72,8 @@ public class CloutParser {
 
     private void getClout(String subject) {
         int count = 0;
-        count = queryFollowersForSubjectRecursive(subject, subject, count);
+        count = DBUtils.queryFollowersForSubjectRecursive(subject, subject, count);
         System.out.println(subject + " has " + ((count > 0) ? count : "no") + " followers " );
-    }
-
-    private void getSubjectList(List<String> subjectList) {
-       // String selectStatement = SELECT_ALL_FROM_FOLLOWS;
-        PreparedStatement statement = null;
-        ResultSet resultSet;
-        try {
-            statement = getPreparedStatement(SELECT_ALL_FROM_FOLLOWS);
-            resultSet = statement.executeQuery();
-            while(resultSet.next()) {
-                String newSubject = resultSet.getString(NAME);
-                addTOSubjectList(subjectList, newSubject);
-                newSubject = resultSet.getString(SUBJECT);
-                addTOSubjectList(subjectList, newSubject);
-            }
-        } catch (SQLException e) {
-            System.err.println("Could not query database");
-        } catch (Exception e) {
-            System.err.println("Could not query database");
-        } finally {
-            if(statement != null) {
-                closeConnection(statement);
-            }
-        }
-    }
-
-    private PreparedStatement getPreparedStatement(String selectStatement) throws SQLException {
-        Connection connection = DBConnection.getInstance().getConnection();
-        return connection.prepareStatement(selectStatement);
     }
 
     private void performFollowsCommand(String input) {
@@ -121,76 +81,15 @@ public class CloutParser {
         if(fields.size() == 2) {
             String follower = fields.get(0);
             String subject = fields.get(1);
-            writeToDB(follower, subject);
+            DBUtils.writeToDB(follower, subject);
             if(!StringUtils.equalsIgnoreCase(follower, subject)) {
-                writeToDB(subject, "");
+                DBUtils.writeToDB(subject, "");
                 System.out.println("OK!");
             } else {
                 System.out.println("Interesting, but that doesn't make sense.");
             }
         } else {
             System.err.println("Sorry incorrect syntax");
-        }
-    }
-
-    private void writeToDB(String follower, String subject) {
-        PreparedStatement statement = null;
-        String writeStatement = (StringUtils.isEmpty(subject)) ? INSERT_INTO_FOLLOWS : MERGE_INTO_FOLLOWS;
-        try {
-            statement = getPreparedStatement(writeStatement);
-            statement.setString(1, follower);
-            statement.setString(2, subject);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            String reason = e.getMessage();
-            if(StringUtils.isEmpty(subject) && !StringUtils.containsIgnoreCase(reason, "Unique index or primary key violation:")) {
-                System.err.println("Could not add follower: " + e);
-            }
-        } catch (Exception e) {
-            System.err.println("Could not query database");
-        } finally {
-            if(statement != null) {
-                closeConnection(statement);
-            }
-        }
-    }
-
-    private int queryFollowersForSubjectRecursive(String rootSubject, String subject, int startCount) {
-        int count = startCount;
-        PreparedStatement statement = null;
-        ResultSet resultSet;
-        try {
-            List<String> subjectList = new ArrayList<String>();
-            statement = getPreparedStatement(SELECT_SUBJECT_FROM_FOLLOWS);
-            statement.setString(1, subject);
-            resultSet = statement.executeQuery();
-            while(resultSet.next()) {
-                count++;
-                subjectList.add(resultSet.getString(NAME));
-            }
-
-            for(String follower : subjectList) {
-                if(!StringUtils.equalsIgnoreCase(subject, follower) && !StringUtils.equalsIgnoreCase(rootSubject, follower)) {
-                    count += queryFollowersForSubjectRecursive(rootSubject, follower, startCount);
-                }
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Could not query database");
-        } catch (Exception e) {
-            System.err.println("Could not query database");
-        } finally {
-            if(statement != null) {
-                closeConnection(statement);
-            }
-        }
-        return count;
-    }
-
-
-    private void addTOSubjectList(List<String> subjectList, String newSubject) {
-        if(!subjectList.contains(newSubject) &&!StringUtils.isEmpty(newSubject)) {
-            subjectList.add(newSubject);
         }
     }
 
@@ -201,14 +100,6 @@ public class CloutParser {
             fields.remove("");
         }
         return fields;
-    }
-
-    private void closeConnection(Statement statement) {
-        try {
-            statement.close();
-        } catch (SQLException e) {
-            System.err.println("Unable to close db connection");
-        }
     }
 
 
