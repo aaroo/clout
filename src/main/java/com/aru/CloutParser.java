@@ -32,9 +32,7 @@ public class CloutParser {
             } else {
                 System.err.println("Sorry, trouble getting a DB Connection");
             }
-
         }
-
     }
 
     private void handleCommand(String input) {
@@ -109,7 +107,12 @@ public class CloutParser {
             String follower = fields.get(0);
             String subject = fields.get(1);
             mergeIntoDB(follower, subject);
-            insertIntoDB(subject, "");
+            if(!StringUtils.equalsIgnoreCase(follower, subject)) {
+                insertIntoDB(subject, "");
+                System.out.println("OK!");
+            } else {
+                System.out.println("Interesting, but that doesn't make sense.");
+            }
         } else {
             System.err.println("Sorry incorrect syntax");
         }
