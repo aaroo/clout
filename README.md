@@ -98,3 +98,15 @@ OK!
 > clout Victor Valdes
 
 Victor Valdes has 4 followers # Valdes has inherited the followers that Messi had, plus Messi himself.
+
+REFERENCES:
+
+For maven related help: 
+https://maven.apache.org
+
+For database related help:
+http://www.h2database.com
+http://www.mkyong.com
+
+For miscelleneous help:
+http://stackoverflow.com/
