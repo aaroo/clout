@@ -18,6 +18,10 @@ public class CloutParser {
 
     public static final String SUBJECT = "subject";
     public static final String NAME = "name";
+    public static final String SELECT_ALL_FROM_FOLLOWS = "SELECT name, subject from FOLLOWS";
+    public static final String INSERT_INTO_FOLLOWS = "INSERT INTO FOLLOWS(name, subject) VALUES (?, ?)";
+    public static final String MERGE_INTO_FOLLOWS = "MERGE INTO FOLLOWS(name, subject) KEY(name) VALUES (?, ?)";
+    public static final String SELECT_SUBJECT_FROM_FOLLOWS = "SELECT name, subject from FOLLOWS where subject=?";
 
     public void parseInput(String input) {
         if(StringUtils.isEmpty(input)) {
@@ -84,12 +88,11 @@ public class CloutParser {
     }
 
     private void getSubjectList(List<String> subjectList) {
-        String selectStatement = "SELECT name, subject from FOLLOWS";
+       // String selectStatement = SELECT_ALL_FROM_FOLLOWS;
         PreparedStatement statement = null;
         ResultSet resultSet;
         try {
-            Connection connection = DBConnection.getInstance().getConnection();
-            statement = connection.prepareStatement(selectStatement);
+            statement = getPreparedStatement(SELECT_ALL_FROM_FOLLOWS);
             resultSet = statement.executeQuery();
             while(resultSet.next()) {
                 String newSubject = resultSet.getString(NAME);
@@ -106,6 +109,11 @@ public class CloutParser {
                 closeConnection(statement);
             }
         }
+    }
+
+    private PreparedStatement getPreparedStatement(String selectStatement) throws SQLException {
+        Connection connection = DBConnection.getInstance().getConnection();
+        return connection.prepareStatement(selectStatement);
     }
 
     private void performFollowsCommand(String input) {
@@ -129,9 +137,7 @@ public class CloutParser {
     private void insertIntoDB(String follower, String subject) {
         PreparedStatement statement = null;
         try {
-            String insertQuery = "INSERT INTO FOLLOWS(name, subject) VALUES (?, ?)";
-            Connection connection = DBConnection.getInstance().getConnection();
-            statement = connection.prepareStatement(insertQuery);
+            statement = getPreparedStatement(INSERT_INTO_FOLLOWS);
             statement.setString(1, follower);
             statement.setString(2, subject);
             statement.executeUpdate();
@@ -152,9 +158,7 @@ public class CloutParser {
     private void mergeIntoDB(String follower, String subject) {
         PreparedStatement statement = null;
         try {
-            String insertQuery = "MERGE INTO FOLLOWS(name, subject) KEY(name) VALUES (?, ?)";
-            Connection connection = DBConnection.getInstance().getConnection();
-            statement = connection.prepareStatement(insertQuery);
+            statement = getPreparedStatement(MERGE_INTO_FOLLOWS);
             statement.setString(1, follower);
             statement.setString(2, subject);
             statement.executeUpdate();
@@ -171,13 +175,11 @@ public class CloutParser {
 
     private int queryFollowersForSubjectRecursive(String rootSubject, String subject, int startCount) {
         int count = startCount;
-        String selectStatement = "SELECT name, subject from FOLLOWS where subject=?";
         PreparedStatement statement = null;
         ResultSet resultSet;
         try {
             List<String> subjectList = new ArrayList<String>();
-            Connection connection = DBConnection.getInstance().getConnection();
-            statement = connection.prepareStatement(selectStatement);
+            statement = getPreparedStatement(SELECT_SUBJECT_FROM_FOLLOWS);
             statement.setString(1, subject);
             resultSet = statement.executeQuery();
             while(resultSet.next()) {
