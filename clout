@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#mvn clean install
+FILE=clout-1.0-SNAPSHOT-jar-with-dependencies.jar
+if [ -f target/clout-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
+    chmod 777 target/clout-1.0-SNAPSHOT-jar-with-dependencies.jar
+    java -jar target/clout-1.0-SNAPSHOT-jar-with-dependencies.jar
+else
+    echo "Sorry couldn't find the executable jar clout-1.0-SNAPSHOT-jar-with-dependencies.jar"
+    fi
