@@ -1,6 +1,6 @@
 # clout
 The current implementation of this application uses Java and H2 relational DB currently used with in-memory mode for quick and clean setup and teardown. 
-maven is used as the build tool and "mvn clean install" should generate an executable jar in thetarget directory and local mvn repo named "clout-1.0-SNAPSHOT-jar-with-dependencies.jar". 
+Maven is used as the build tool and "mvn clean install" should generate an executable jar in the target directory and local mvn repo named "clout-1.0-SNAPSHOT-jar-with-dependencies.jar". 
 For convenience, standard practice has been broken here and the target directory has been uploaded incase the user does not have maven setup to build.
 
 TO RUN: simply run the script "clout" using "./clout"
